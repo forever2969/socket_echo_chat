@@ -1,37 +1,29 @@
 import socket
 import json
 
-
-# 접속할 서버 주소입니다. 여기에서는 루프백(loopback) 인터페이스 주소 즉 localhost를 사용합니다.
+# 서버의 호스트와 포트 번호 설정
 HOST = '127.0.0.1'
-# 클라이언트 접속을 대기하는 포트 번호입니다.
 PORT = 9999
 
-
-# 소켓 객체를 생성합니다.
-# 주소 체계(address family)로 IPv4, 소켓 타입으로 TCP 사용합니다.
+# 서버 소켓 생성
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-
-# 포트 사용중이라 연결할 수 없다는
-# WinError 10048 에러 해결를 위해 필요합니다.
+# 소켓의 옵션 설정
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-
-# bind 함수는 소켓을 특정 네트워크 인터페이스와 포트 번호에 연결하는데 사용됩니다.
-# HOST는 hostname, ip address, 빈 문자열 ""이 될 수 있습니다.
-# 빈 문자열이면 모든 네트워크 인터페이스로부터의 접속을 허용합니다.
-# PORT는 1-65535 사이의 숫자를 사용할 수 있습니다.
+# 지정한 HOST와 PORT를 사용하여 소켓을 바인딩
 server_socket.bind((HOST, PORT))
 
-# 서버가 클라이언트의 접속을 허용하도록 합니다.
+# 클라이언트의 연결을 대기
 server_socket.listen()
 
-# accept 함수에서 대기하다가 클라이언트가 접속하면 새로운 소켓을 리턴합니다.
+# 클라이언트 연결이 수립되면, 해당 클라이언트 소켓과 주소 정보를 받아옴
 client_socket, addr = server_socket.accept()
 
-# 접속한 클라이언트의 주소입니다.
+# 클라이언트와 연결이 완료되었음을 출력
 print('Connected by', addr)
+
+# 에코옵션이 잘 들어왔을 때 실행 함수
 
 
 def success_echo_op(chat_data):
@@ -42,6 +34,8 @@ def success_echo_op(chat_data):
         return chat_data['메세지'].upper()
     elif(int(chat_data['에코옵션']) == 3):
         return chat_data['메세지'].lower()
+
+# 에코옵션이 에러가 났을 때 실행 함수
 
 
 def fail_echo_op(chat_data):
@@ -54,27 +48,31 @@ def fail_echo_op(chat_data):
         return "402, option input error: non-integer"
 
 
-# 무한루프를 돌면서
+# 무한 루프를 돌며 클라이언트가 보낸 메시지를 수신하고 에코 처리
 while True:
 
-    # 클라이언트가 보낸 메시지를 수신하기 위해 대기합니다.
+    # 클라이언트가 보낸 메시지를 수신하기 위해 대기
     data = client_socket.recv(1024)
 
-    # 빈 문자열을 수신하면 루프를 중지합니다.
+    # 빈 문자열을 수신하면 루프를 중지
     if not data:
         break
+
+    # 클라이언트가 보낸 데이터를 디코딩하여 dict 형태로 변환
     chat_data = json.loads(data.decode("utf-8"))
 
+    # 에코옵션이 1, 2, 3 중 하나일 경우, 에코 처리 함수 실행
     if(chat_data['에코옵션'] == '1' or chat_data['에코옵션'] == '2' or chat_data['에코옵션'] == '3'):
         return_message = success_echo_op(chat_data)
         print('Received from', addr, chat_data)
-        return_data = '['+chat_data['사용자']+'] : ' + return_message
+        return_data = 'After ['+chat_data['사용자']+'] : ' + return_message
+    # 에코옵션이 1, 2, 3이 아닐 경우, 에러 처리 함수 실행
     else:
         return_message = fail_echo_op(chat_data)
         return_data = return_message
 
     client_socket.sendall(return_data.encode("utf-8"))
 
-# 소켓을 닫습니다.
+# 소켓을 닫기
 client_socket.close()
 server_socket.close()

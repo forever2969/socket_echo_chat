@@ -1,36 +1,40 @@
 import socket
 import json
 
-# 서버의 주소입니다. hostname 또는 ip address를 사용할 수 있습니다.
+# 서버의 IP 주소와 포트 번호
 HOST = '127.0.0.1'
-# 서버에서 지정해 놓은 포트 번호입니다.
 PORT = 9999
 
-
-# 소켓 객체를 생성합니다.
-# 주소 체계(address family)로 IPv4, 소켓 타입으로 TCP 사용합니다.
+# 클라이언트 소켓 생성
 client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-# 메시지를 전송합니다.
+# 사용자 입력 받기
 player = input("사용자 : ")
 option = input("에코 옵션 : ")
 message = input("메세지 : ")
 
+# 메시지 출력
+print('Before ['+player+'] : ' + message)
+
+# JSON 형식으로 채팅 데이터 생성
 chat_data = json.dumps({
     "사용자": player,
     "에코옵션": option,
     "메세지": message
 }, ensure_ascii=False)
 
-# 지정한 HOST와 PORT를 사용하여 서버에 접속합니다.
+# 서버에 접속
 client_socket.connect((HOST, PORT))
 
+# 채팅 데이터 전송
 client_socket.sendall(chat_data.encode("utf-8"))
 
-# 메시지를 수신합니다.
+# 서버로부터 응답 받기
 data = client_socket.recv(1024)
 res_chat_data = data.decode("utf-8")
+
+# 응답 출력
 print(res_chat_data)
 
-# 소켓을 닫습니다.
+# 소켓 닫기
 client_socket.close()
